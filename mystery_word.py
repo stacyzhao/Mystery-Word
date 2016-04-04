@@ -1,7 +1,7 @@
-
 import random
 import re
 
+# divide word list into difficulty and returns a list with 3 difficulty
 def subset_word_list():
     easy = []
     normal = []
@@ -21,14 +21,14 @@ def subset_word_list():
 #returns a word based on difficulty
 def random_word(difficulty):
     easy, normal, hard = subset_word_list()
-    if difficulty == "e":
+    if difficulty == "E":
         return random.choice(easy)
-    elif difficulty == "n":
+    elif difficulty == "N":
         return random.choice(normal)
     else:
         return random.choice(hard)
 
-# returns length of mystery word
+# returns length of mystery word in a list
 def length_of_word(word):
     placeholder = []
     for i in word:
@@ -43,30 +43,40 @@ def index_in_word(a_letter, word):
             index.append(i)
     return index
 
+# if user's guess letter matches anything in the word. returns t/f
+def does_letter_match(a_letter, word):
+    return a_letter in word
+
 # returns partially filled guessed word in a list
 def fill_in_letter(a_letter, clue, word):
     index = index_in_word(a_letter, word)
     for i in index:
         clue[i] = a_letter
+    if a_letter in clue:
+       print ("Good Guess! {} is in the mystery word.".format(a_letter))
     return clue
 
-# if user's guess letter matches anything in the word. returns t/f
-def does_letter_match(a_letter, word):
+# if user gets correct letter, user doesn't lose a try
+def dont_lose_guess(a_letter, word):
     return a_letter in word
 
-# change a list into a str for clue to display
+# change a list into a str
 def list_to_str(placeholder):
     return "".join(placeholder)
 
-# check len of guessed letter, making sure its less than 1 letter and if letter in guessed letter
+def list_to_str_used_letter(placeholder):
+    return ", ".join(placeholder)
+
+# checks len of guessed letter, making sure its less than 1 letter and if letter in guessed letter
 def validate_input(a_letter, guessed_letters):
     clean_text = re.sub("[^A-Za-z]+", "", a_letter)
     if len(clean_text) > 1:
-        print ("Just pick one letter!")
+        print ("Just pick one letter! Try again!")
         return False
 
     if clean_text in guessed_letters:
-        print ("You already guessed this!")
+        print ("You already guessed {}".format(a_letter))
+        print ("\n")
         return False
 
     if clean_text == "":
@@ -81,24 +91,50 @@ def win_game(word, clue):
         print ("Congratulations, you win!!")
         return True
 
+# checks for tries left and returns true if there's no more tries
 def lost_game(tries, word):
     if tries == 0:
-        print ("Sorry! you lost! The word was: {}".format(word))
+        print ("Sorry! You ran out of tries! The word was: {}".format(word))
         return True
 
+# asks if user wants to play again, returns true if they want to play
 def play_again():
-    play = input("Do you want to play again? [y]es or [n]o ").upper()
-    if "Y" == play:
-        return True
+    while True:
+        play = input("Do you want to play again? [Y]es or [N]o ").upper()
+        if "Y" == play or "YES" == play:
+            return True
+        elif "N" == play or "NO" == play:
+            return False
+        else:
+            continue
 
+# ensure user puts in difficulty to get mystery from the right category
+def validate_difficulty():
+    while True:
+        difficulty = input("Choose a level of difficulty: [E]asy, [N]ormal or [H]ard mode?").upper()
+        print ("\n")
+
+        clean_text = re.sub("[^A-Za-z]+", "", difficulty)
+
+        if len(clean_text) > 1:
+            print ("Just pick one letter! Try again!")
+            continue
+
+        if difficulty == "E" or difficulty == "N" or difficulty == "H":
+            return difficulty
+        else:
+            continue
+
+# initalize game variables
 def start_game():
-        tries = 8
-        guessed_letters = []
-        difficulty = input("Choose a level of difficulty: [E]asy, [N]ormal or [H]ard mode?").lower()
-        chosen_word = random_word(difficulty).upper()
-        clue = length_of_word(chosen_word)
-        return [tries, guessed_letters, difficulty, chosen_word, clue]
+    tries = 8
+    guessed_letters = []
+    difficulty = validate_difficulty()
+    chosen_word = random_word(difficulty).upper()
+    clue = length_of_word(chosen_word)
+    print ("The mystery word has {} letters.".format(len(clue)))
 
+    return [tries, guessed_letters, difficulty, chosen_word, clue]
 
 
 def main():
@@ -106,50 +142,40 @@ def main():
     tries, guessed_letters, difficulty, chosen_word, clue = start_game()
 
     while tries > 0:
-        print ("You have {} tries.".format(tries))
-        guessed_letter = input("Pick a letter: ").upper()
+        print ("You have {} guesses.".format(tries))
+        guessed_letter = input("Please pick a letter: ").upper()
 
-        valid = validate_input(guessed_letter, guessed_letters)
-        if valid is False:
+        if validate_input(guessed_letter, guessed_letters) is False:
             continue
-        #does the letter match the word
-        letter_match = does_letter_match(guessed_letter, chosen_word)
 
-        if letter_match == True:
+        if does_letter_match(guessed_letter, chosen_word) is True:
             index_in_word(guessed_letters, chosen_word)
 
-        fill = fill_in_letter(guessed_letter, clue, chosen_word)
-        display_clue = list_to_str(fill)
-        print("Your clue: ", display_clue)
+        display_word = list_to_str(fill_in_letter(guessed_letter, clue, chosen_word))
+        print(display_word)
 
         guessed_letters += guessed_letter
+        print ("Used Letters: ", guessed_letters)
+        print ("\n")
+
+        if dont_lose_guess(guessed_letter, chosen_word) is True:
+            continue
 
         tries -=1
 
-        used_letter = list_to_str(guessed_letters)
-        print ("Used Letters: ", used_letter)
-
-        print ("_________________")
-        print ("computer word: ", chosen_word)
-
-        game_win = win_game(display_clue, chosen_word)
-        if game_win == True:
-            if play_again == True:
-                tries, guessed_letter, difficulty, chosen_word, clue = start_game()
+        if win_game(display_word, chosen_word) == True:
+            if play_again() == True:
+                tries, guessed_letters, difficulty, chosen_word, clue = start_game()
                 continue
             else:
                 break
 
-        game_lost = lost_game(tries, chosen_word)
-        if game_lost == True:
-            if play_again == True:
-                tries, guessed_letter, difficulty, chosen_word, clue = start_game()
+        if lost_game(tries, chosen_word) == True:
+            if play_again() == True:
+                tries, guessed_letters, difficulty, chosen_word, clue = start_game()
                 continue
             else:
                 break
-
-
-
 
 if __name__ == '__main__':
     main()
