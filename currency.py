@@ -39,3 +39,5 @@ print(currencytest - currencytest1)
 
 class DifferentCurrencyCodeError(Exception):
     pass
+
+raise DifferentCurrencyCodeError("Different Currency Code.")
